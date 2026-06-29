@@ -1,0 +1,314 @@
+# AR notes:
+# - Arabic is processed in LOGICAL character order. RTL is a display concern
+#   only; nothing in this file (or analyze.py) reverses text or does bidi work.
+# - Clitic-aware matching: suspect_vocabulary entries are listed as BARE stems.
+#   detect_suspect_vocab allows an optional leading clitic [وفبكل] and/or the
+#   article ال before each stem (so "كلمة" also matches "الكلمة" / "وكلمة").
+#   Do NOT pre-prefix the entries with ال or و here — the analyzer does it.
+# - Suspect vocabulary covers Tier 1 + Tier 2 (~150 entries). Tier 3 is
+#   documented in references/tells-stylistic-ar.md but excluded here:
+#   false-positive risk on common Arabic words is too high for a per-stem matcher.
+# - The "—" em-dash threshold is STRICTER than the master's 1.0 (set to 0.5).
+#   The em-dash U+2014 is FOREIGN to Arabic typography; native Arabic uses the
+#   comma ، colon : or parentheses for asides. Any "—" is suspicious; target 0.
+#   (En-dash "–" in number ranges and the hyphen "-" are fine; only the wide
+#   "—" misused as an emphasis/parenthetical dash is the tell.)
+# - latin_punct_in_arabic_max is the NEW AR typography threshold: the maximum
+#   number of Latin , ; ? characters allowed ADJACENT to Arabic letters (i.e.
+#   used where ، ؛ ؟ should be) before the detector flags. Calibrated so clean
+#   native prose (which uses ، ؛ ؟ throughout) scores 0.
+# - tatweel_max is an OPTIONAL second AR threshold; it is currently UNREAD by
+#   analyze.py (the tatweel ـــ U+0640 overuse tell is documented in
+#   tells-stylistic-ar.md and left to the human reviewer). Kept for parity with
+#   the doctrine; do not treat its presence as a bug.
+# - burstiness_min and comma_density_max are copied verbatim from the master
+#   thresholds block; they are currently UNREAD by analyze.py (vestigial). Keep
+#   them; do not treat their presence as a bug.
+ar:
+  suspect_vocabulary:
+    # --- Tier 1: high signal ---
+    # Meta-comment openers / hedges (the strongest MSA AI topic-sentence tells)
+    - "تجدر الإشارة"
+    - "تجدر الاشارة"
+    - "من الجدير بالذكر"
+    - "جدير بالذكر"
+    - "من الجدير بالملاحظة"
+    - "من المهم أن نلاحظ"
+    - "من المهم الإشارة"
+    - "من المهم أن نذكر"
+    - "من الضروري أن نشير"
+    - "لا بد من الإشارة"
+    - "لا بد أن نذكر"
+    - "ينبغي الإشارة"
+    - "ينبغي أن نلاحظ"
+    - "كما هو معروف"
+    - "كما نعلم جميعا"
+    - "كما يعلم الجميع"
+    - "من المعلوم"
+    # Certainty / emphasis phrases
+    - "مما لا شك فيه"
+    - "ما لا شك فيه"
+    - "لا شك أن"
+    - "بلا شك"
+    - "دون أدنى شك"
+    - "من نافلة القول"
+    - "بكل تأكيد"
+    - "بالتأكيد"
+    - "بطبيعة الحال"
+    - "بكل وضوح"
+    # Spatial-temporal abstractions (date-free scene-setters)
+    - "في عالم اليوم"
+    - "في عالمنا اليوم"
+    - "في عصرنا الحالي"
+    - "في عصرنا الحديث"
+    - "في العصر الرقمي"
+    - "في عصر الذكاء الاصطناعي"
+    - "في عصر المعلومات"
+    - "في الوقت الراهن"
+    - "في الوقت الحاضر"
+    - "في يومنا هذا"
+    - "في عالم يتسم"
+    - "في ظل التطور"
+    - "في ظل التقدم"
+    - "في خضم"
+    - "في قلب"
+    # Context / framing connectors
+    - "في هذا السياق"
+    - "في هذا الصدد"
+    - "في هذا الإطار"
+    - "على هذا الصعيد"
+    - "في ضوء ذلك"
+    - "في ضوء هذا"
+    - "بناء على ذلك"
+    - "من هذا المنطلق"
+    - "من ناحية أخرى"
+    - "على صعيد آخر"
+    # Marketing inflators (adjectives/nouns)
+    - "مبتكر"
+    - "مبتكرة"
+    - "ثوري"
+    - "ثورية"
+    - "رائد"
+    - "رائدة"
+    - "متطور"
+    - "متطورة"
+    - "متقدم"
+    - "حديث"
+    - "عصري"
+    - "استثنائي"
+    - "استثنائية"
+    - "فريد"
+    - "فريدة"
+    - "لا مثيل له"
+    - "لا غنى عنه"
+    - "حجر الزاوية"
+    - "ركيزة أساسية"
+    - "العمود الفقري"
+    - "نقلة نوعية"
+    # Hyped solution language
+    - "حلول مبتكرة"
+    - "حلول متطورة"
+    - "حل شامل"
+    - "حلا متكاملا"
+    - "تجربة سلسة"
+    - "سلس"
+    - "سلسة"
+    - "بسلاسة"
+    - "دون عناء"
+    - "بكل سهولة"
+    # CTA / opener verbs AI loves
+    - "دعونا نستكشف"
+    - "دعونا نتعرف"
+    - "دعنا نستكشف"
+    - "هيا بنا"
+    - "انغمس"
+    - "اكتشف"
+    - "استكشف"
+    - "أطلق العنان"
+    - "أطلق إمكانات"
+    - "حرر إمكانات"
+    # Heavy verbs / verbal phrases
+    - "تسخير"
+    - "تتيح"
+    - "تمكن"
+    - "يمكّن"
+    - "تعزيز"
+    - "يعزز"
+    - "تمكين"
+    - "إحداث ثورة"
+    - "يحدث ثورة"
+    - "ترسيخ"
+    - "تجسيد"
+    - "بلورة"
+
+    # --- Tier 2: medium signal ---
+    # Connectors (overuse)
+    - "علاوة على ذلك"
+    - "إضافة إلى ذلك"
+    - "بالإضافة إلى ذلك"
+    - "فضلا عن ذلك"
+    - "وعلاوة على"
+    - "كذلك"
+    - "أيضا"
+    - "وبالتالي"
+    - "ومن ثم"
+    - "نتيجة لذلك"
+    - "وفي الواقع"
+    - "في الواقع"
+    - "في حقيقة الأمر"
+    - "في نهاية المطاف"
+    - "في خاتمة المطاف"
+    # Conclusion templates
+    - "في الختام"
+    - "وفي الختام"
+    - "في النهاية"
+    - "ختاما"
+    - "خلاصة القول"
+    - "وخلاصة القول"
+    - "باختصار"
+    - "وفي الأخير"
+    - "إجمالا"
+    # Importance / intensity adjectives
+    - "حاسم"
+    - "حاسمة"
+    - "جوهري"
+    - "جوهرية"
+    - "أساسي"
+    - "أساسية"
+    - "ضروري"
+    - "حيوي"
+    - "محوري"
+    - "بالغ الأهمية"
+    - "ملحوظ"
+    - "ملموس"
+    - "هائل"
+    - "هائلة"
+    - "كبير"
+    # Abstract / buzzy nouns
+    - "منظومة"
+    - "منظومة متكاملة"
+    - "تآزر"
+    - "نموذج"
+    - "رؤية"
+    - "رحلة"
+    - "مسيرة"
+    - "آفاق"
+    - "آفاقا"
+    - "إمكانات"
+    - "إمكانيات"
+    - "قيمة مضافة"
+    - "كفاءة"
+    - "فعالية"
+    - "مرونة"
+    - "استدامة"
+    - "تميز"
+    - "ريادة"
+    # Soft verbs
+    - "تحسين"
+    - "تطوير"
+    - "تبسيط"
+    - "تسهيل"
+    - "ضمان"
+    - "يضمن"
+    - "تحقيق"
+    - "مواكبة"
+    - "إدارة"
+    - "توظيف"
+    - "استغلال"
+    - "الاستفادة"
+  ai_constructions:
+    # --- High severity (banned outright) ---
+    # Scene-setting openers
+    - pattern: "في عالم اليوم"
+      severity: high
+    - pattern: "في عالمنا اليوم"
+      severity: high
+    - pattern: "في عصرنا الحالي"
+      severity: high
+    - pattern: "في العصر الرقمي"
+      severity: high
+    - pattern: "في عصر الذكاء الاصطناعي"
+      severity: high
+    # Meta-comment topic-sentence tells
+    - pattern: "تجدر الإشارة إلى"
+      severity: high
+    - pattern: "من الجدير بالذكر"
+      severity: high
+    - pattern: "من المهم أن نلاحظ"
+      severity: high
+    # Certainty
+    - pattern: "مما لا شك فيه"
+      severity: high
+    - pattern: "لا شك أن"
+      severity: high
+    # CTA openers
+    - pattern: "دعونا نستكشف"
+      severity: high
+    - pattern: "أطلق العنان"
+      severity: high
+    - pattern: "حلول مبتكرة"
+      severity: high
+    # "It is not just X, but Y" calque
+    - pattern: "ليس مجرد .{0,30}? بل"
+      severity: high
+    - pattern: "لا يقتصر الأمر على"
+      severity: high
+    # --- Medium severity (rare-only) ---
+    - pattern: "تخيل عالما"
+      severity: medium
+    - pattern: "تخيل أنك"
+      severity: medium
+    - pattern: "سواء كنت .{0,30}? أو"
+      severity: medium
+    - pattern: "هل تساءلت يوما"
+      severity: medium
+    - pattern: "قد تتساءل"
+      severity: medium
+    - pattern: "دعنا نتعمق"
+      severity: medium
+    - pattern: "في هذا السياق"
+      severity: medium
+    - pattern: "على هذا الصعيد"
+      severity: medium
+    # --- Low severity (flag only at high frequency) ---
+    - pattern: "في الختام"
+      severity: low
+    - pattern: "في نهاية المطاف"
+      severity: low
+    - pattern: "خلاصة القول"
+      severity: low
+    - pattern: "وفي الختام"
+      severity: low
+    - pattern: "علاوة على ذلك"
+      severity: low
+  thresholds:
+    # AR: the em-dash "—" (U+2014) is FOREIGN to Arabic typography. Stricter than
+    # the master 1.0 — set to 0.5 so even one "—" in a short piece flags. Native
+    # Arabic uses ، : or parentheses for asides. Target 0.
+    em_dash_per_1000_words: 0.5
+    burstiness_min: 8.0
+    sentence_stdev_min: 8.0
+    lexical_diversity_min: 0.45
+    comma_density_max: 2.0
+    bullet_parallelism_max: 0.80
+    # NEW AR typography detector: max number of Latin , ; ? characters allowed
+    # ADJACENT to Arabic letters (used where ، ؛ ؟ should be) before flagging.
+    # 0 = strict (any Latin punctuation inside Arabic flags). Clean native prose
+    # uses the Arabic marks throughout, so it never fires.
+    latin_punct_in_arabic_max: 0
+    # OPTIONAL second AR threshold — tatweel ـــ (U+0640) elongation overuse.
+    # Currently UNREAD by analyze.py (left to the human reviewer per doctrine);
+    # kept for parity with tells-stylistic-ar.md. Do not treat as a bug.
+    tatweel_max: 0
+
+content_type_weights:
+  marketing:     {statistical: 1.0, stylistic: 1.0, structural: 1.0}
+  short-comms:   {statistical: 0.6, stylistic: 1.2, structural: 0.5}
+  technical:     {statistical: 0.5, stylistic: 0.7, structural: 0.3}
+  editorial-seo: {statistical: 0.9, stylistic: 1.0, structural: 1.0}
+
+verdict_bands:
+  LOW_RISK: [0, 24]
+  MEDIUM_RISK: [25, 49]
+  HIGH_RISK: [50, 74]
+  CRITICAL: [75, 100]
